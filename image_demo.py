@@ -1,3 +1,4 @@
+#import tensorflow as tf
 import tensorflow as tf
 import cv2
 import time
@@ -17,7 +18,6 @@ args = parser.parse_args()
 
 
 def main():
-
     with tf.Session() as sess:
         model_cfg, model_outputs = posenet.load_model(args.model, sess)
         output_stride = model_cfg['output_stride']
@@ -30,9 +30,10 @@ def main():
             f.path for f in os.scandir(args.image_dir) if f.is_file() and f.path.endswith(('.png', '.jpg'))]
 
         start = time.time()
-        for f in filenames:
+        for file in filenames:
+            print('file name' + file)
             input_image, draw_image, output_scale = posenet.read_imgfile(
-                f, scale_factor=args.scale_factor, output_stride=output_stride)
+                file, scale_factor=args.scale_factor, output_stride=output_stride)
 
             heatmaps_result, offsets_result, displacement_fwd_result, displacement_bwd_result = sess.run(
                 model_outputs,
@@ -55,11 +56,10 @@ def main():
                     draw_image, pose_scores, keypoint_scores, keypoint_coords,
                     min_pose_score=0.25, min_part_score=0.25)
 
-                cv2.imwrite(os.path.join(args.output_dir, os.path.relpath(f, args.image_dir)), draw_image)
+                cv2.imwrite(os.path.join(args.output_dir, os.path.relpath(file, args.image_dir)), draw_image)
 
             if not args.notxt:
-                print()
-                print("Results for image: %s" % f)
+                print("Results for image: %s" % file)
                 for pi in range(len(pose_scores)):
                     if pose_scores[pi] == 0.:
                         break

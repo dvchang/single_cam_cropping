@@ -81,6 +81,8 @@ def draw_skel_and_kp(
     out_img = img
     adjacent_keypoints = []
     cv_keypoints = []
+    nose_kp = []
+
     for ii, score in enumerate(instance_scores):
         if score < min_pose_score:
             continue
@@ -89,13 +91,39 @@ def draw_skel_and_kp(
             keypoint_scores[ii, :], keypoint_coords[ii, :, :], min_part_score)
         adjacent_keypoints.extend(new_keypoints)
 
+        iii = 0
         for ks, kc in zip(keypoint_scores[ii, :], keypoint_coords[ii, :, :]):
+            iii = iii + 1
             if ks < min_part_score:
                 continue
             cv_keypoints.append(cv2.KeyPoint(kc[1], kc[0], 10. * ks))
+            if (iii == 1):
+                nose_kp.append(cv2.KeyPoint(kc[1], kc[0], 10. * ks))
+                
 
     out_img = cv2.drawKeypoints(
         out_img, cv_keypoints, outImage=np.array([]), color=(255, 255, 0),
         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     out_img = cv2.polylines(out_img, adjacent_keypoints, isClosed=False, color=(255, 255, 0))
     return out_img
+
+def get_pose(instance_scores, keypoint_scores, keypoint_coords,
+                   min_pose_score=0.5, min_part_score=0.5):
+    pose = []
+    for ii, score in enumerate(instance_scores):
+        if score < min_pose_score:
+            continue
+        cv_keypoints = []
+        for ks, kc in zip(keypoint_scores[ii, :], keypoint_coords[ii, :, :]):
+            cv_keypoints.append((kc[1], kc[0]))
+        pose.append(cv_keypoints)
+    return pose
+
+
+def pose_get_nose_x(pose):
+    nose_pose = pose[1]
+    return nose_pose[0]
+
+
+#def generate_crop(existing_crop, target_crop, nose_keypoint):
+    
