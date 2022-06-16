@@ -37,7 +37,7 @@ def overlapping_perct(crop1, crop2):
     x1, y1, x2, y2 = read_from_crop(crop1)
     area1 = (x2 - x1) * (y2 - y1)
     overlap = area(crop1, crop2)
-    return area1 / overlap
+    return overlap / area1
 
 
 def crop_rect(nose, w, h, adjust, old_crop):
@@ -53,8 +53,9 @@ def crop_rect(nose, w, h, adjust, old_crop):
     if (len(old_crop) <= 1):
         return new_crop
     over_lap = overlapping_perct(new_crop, old_crop)
+    print('overlapping percentage :', over_lap)
     if (over_lap < 0.8):
-        print('overlapping percentage :', over_lap)
+        #print('overlapping percentage :', over_lap)
         return new_crop
     return old_crop
 

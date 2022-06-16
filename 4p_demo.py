@@ -12,7 +12,7 @@ parser.add_argument('--cam_id', type=int, default=0)
 parser.add_argument('--cam_width', type=int, default=3376)
 parser.add_argument('--cam_height', type=int, default=2528)
 parser.add_argument('--scale_factor', type=float, default=0.3)
-parser.add_argument('--file', type=str, default="/Users/dvc/pyproject/posenet-python/video/raw3k.mp4",
+parser.add_argument('--file', type=str, default="/Users/dvc/pyproject/posenet-python/video/819PGR01P0803405_VID_20220607_162808.mp4",
                     help="Optionally use a video file instead of a live camera")
 args = parser.parse_args()
 
@@ -31,7 +31,7 @@ def area(a, b):  # returns None if rectangles don't intersect
     dy = min(aymax, bymax) - max(aymin, bymin)
     if (dx >= 0) and (dy >= 0):
         return dx*dy
-    
+
 
 def overlapping_perct(crop1, crop2):
     x1, y1, x2, y2 = read_from_crop(crop1)
@@ -53,8 +53,8 @@ def crop_rect(nose, w, h, adjust, old_crop):
     if (len(old_crop) <= 1):
         return new_crop
     over_lap = overlapping_perct(new_crop, old_crop)
+    print('overlapping percentage :', over_lap)
     if (over_lap < 0.8):
-        print('overlapping percentage :', over_lap)
         return new_crop
     return old_crop
 
