@@ -124,6 +124,4 @@ def pose_get_nose_x(pose):
     nose_pose = pose[1]
     return nose_pose[0]
 
-
-#def generate_crop(existing_crop, target_crop, nose_keypoint):
     
