@@ -42,21 +42,28 @@ def overlapping_perct(crop1, crop2):
 def calculate_crop(crop, crop_target):
     x1, y1, x2, y2 = read_from_crop(crop)
     xx1, yy1, xx2, yy2 = read_from_crop(crop_target)
+    m = 2
+    mx = abs(x1 - xx1)
+    if (mx > m):
+        mx = m
     if (x1 > xx1):
-        x1 = x1 - 1;
-        x2 = x2 - 1;
+        x1 = x1 - mx;
+        x2 = x2 - mx;
     else:
         if (x1 < xx1):
-            x1 = x1 + 1;
-            x2 = x2 + 1;
+            x1 = x1 + mx;
+            x2 = x2 + mx;
     
+    my = abs(y1 - yy1)
+    if (my > m):
+        my = m
     if (y1 > yy1):
-            y1 = y1 - 1;
-            y2 = y2 - 1;
+            y1 = y1 - m;
+            y2 = y2 - m;
     else:
         if (y1 < yy1):
-            y1 = y1 + 1;
-            y2 = y2 + 1;
+            y1 = y1 + m;
+            y2 = y2 + m;
     return gen_crop(x1, y1, x2, y2)
 
 
@@ -78,7 +85,7 @@ def calculate_crop_target(nose1, nose2, w, h, adjust, old_crop_target):
         return new_crop
     over_lap = overlapping_perct(new_crop, old_crop_target)
     print('overlapping percentage :', over_lap)
-    if (over_lap < 0.86):
+    if (over_lap < 0.90):
         #print('overlapping percentage :', over_lap)
         return new_crop
     return old_crop_target
@@ -113,21 +120,26 @@ def main():
                                  30, (args.cam_width, args.cam_height))
         v_width = 1280
         v_height = 720
+        crop_width = round(v_width/4)
         factor = 1.3
-        v_width_h = round((v_width * factor) / 2)
+        v_width_h = round((crop_width * factor) / 2)
         v_height_h = round((v_height * factor) / 2)
         v_height_adjustment = round(90 * factor)
         v_separator_w = 10
         compose = cv2.VideoWriter('compose_out.avi',
                                   cv2.VideoWriter_fourcc(*'MJPG'),
-                                  30, (v_width * 2 + v_separator_w, v_height))
+                                  30, (v_width * 1 + v_separator_w * 3, v_height))
 
         start = time.time()
         frame_count = 0
         crop1 = []
         crop2 = []
+        crop3 = []
+        crop4 = []
         crop1_target = []
         crop2_target = []
+        crop3_target = []
+        crop4_target = []
         while True:
             input_image, display_image, output_scale = posenet.read_cap(
                 cap, scale_factor=args.scale_factor, output_stride=output_stride)
@@ -176,17 +188,23 @@ def main():
                 p4 = pose_a[1]
                 
                 
-                img1, crop1, crop1_target = generate_crop(display_image, p1, p2, v_width_h, v_height_h, v_height_adjustment, crop1, crop1_target)
+                img1, crop1, crop1_target = generate_crop(display_image, p1, p1, v_width_h, v_height_h, v_height_adjustment, crop1, crop1_target)
+                img1 = cv2.resize(img1, dsize=(crop_width, v_height), interpolation=cv2.INTER_CUBIC)
                 
-                img2, crop2, crop2_target = generate_crop(display_image, p3, p4, v_width_h, v_height_h, v_height_adjustment, crop2, crop2_target)
                 
-                img1 = cv2.resize(img1, dsize=(v_width, v_height), interpolation=cv2.INTER_CUBIC)
-                img2 = cv2.resize(img2, dsize=(v_width, v_height), interpolation=cv2.INTER_CUBIC)
+                img2, crop2, crop2_target = generate_crop(display_image, p2, p2, v_width_h, v_height_h, v_height_adjustment, crop2, crop2_target)
+                img2 = cv2.resize(img2, dsize=(crop_width, v_height), interpolation=cv2.INTER_CUBIC)
+ 
+                img3, crop3, crop3_target = generate_crop(display_image, p3, p3, v_width_h, v_height_h, v_height_adjustment, crop3, crop3_target)
+                img3 = cv2.resize(img3, dsize=(crop_width, v_height), interpolation=cv2.INTER_CUBIC)
+                
+                img4, crop4, crop4_target = generate_crop(display_image, p4, p4, v_width_h, v_height_h, v_height_adjustment, crop4, crop4_target)
+                img4 = cv2.resize(img4, dsize=(crop_width, v_height), interpolation=cv2.INTER_CUBIC)
                 
                 black_separator = np.zeros((v_height, v_separator_w, 3), np.uint8)
             
                 
-                horizontal = np.concatenate((img1, black_separator, img2), axis = 1)
+                horizontal = np.concatenate((img1, black_separator, img2, black_separator, img3, black_separator, img4), axis = 1)
                 
                 cv2.imshow('posenet', horizontal)
                 
