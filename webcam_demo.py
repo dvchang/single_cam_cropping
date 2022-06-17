@@ -152,13 +152,13 @@ def main():
                 min_pose_score=0.15,
                 min_part_score=0.1)
     
-            pose.sort(reverse=True, key=posenet.pose_get_nose_x)
+            pose.sort(key=posenet.pose_get_nose_x)
     
     
             if (len(pose) == 2):
-                pose1 = pose[1]
+                pose1 = pose[0]
                 c1 = pose1[1]
-                pose2 = pose[0]
+                pose2 = pose[1]
                 c2 = pose2[1]
                 p1 = c1
                 p2 = c2

@@ -31,41 +31,70 @@ def area(a, b):  # returns None if rectangles don't intersect
     dy = min(aymax, bymax) - max(aymin, bymin)
     if (dx >= 0) and (dy >= 0):
         return dx*dy
-
+    
 
 def overlapping_perct(crop1, crop2):
     x1, y1, x2, y2 = read_from_crop(crop1)
     area1 = (x2 - x1) * (y2 - y1)
     overlap = area(crop1, crop2)
-    return area1 / overlap
+    return overlap / area1
 
-
-def crop_rect(nose, w, h, adjust, old_crop):
+def calculate_crop(crop, crop_target):
+    x1, y1, x2, y2 = read_from_crop(crop)
+    xx1, yy1, xx2, yy2 = read_from_crop(crop_target)
+    if (x1 > xx1):
+        x1 = x1 - 1;
+        x2 = x2 - 1;
+    else:
+        if (x1 < xx1):
+            x1 = x1 + 1;
+            x2 = x2 + 1;
     
-    yy = round(nose[1])
-    xx = round(nose[0])
+    if (y1 > yy1):
+            y1 = y1 - 1;
+            y2 = y2 - 1;
+    else:
+        if (y1 < yy1):
+            y1 = y1 + 1;
+            y2 = y2 + 1;
+    return gen_crop(x1, y1, x2, y2)
+
+
+def calculate_crop_target(nose1, nose2, w, h, adjust, old_crop_target):
+    ny1 = nose1[1]
+    nx1 = nose1[0]
+    ny2 = nose2[1]
+    nx2 = nose2[0]
+    
+    yy = round((ny1 + ny2)/2)
+    xx = round((nx1 + nx2)/2)
 
     y1 = yy - h + adjust
     y2 = yy + h + adjust
     x1 = xx - w
     x2 = xx + w
     new_crop = gen_crop(x1, y1, x2, y2)
-    if (len(old_crop) <= 1):
+    if (len(old_crop_target) <= 1):
         return new_crop
-    over_lap = overlapping_perct(new_crop, old_crop)
+    over_lap = overlapping_perct(new_crop, old_crop_target)
     print('overlapping percentage :', over_lap)
     if (over_lap < 0.8):
+        #print('overlapping percentage :', over_lap)
         return new_crop
-    return old_crop
+    return old_crop_target
 
 def crop_image(img, crop):
     x1, y1, x2, y2 = read_from_crop(crop)
     cropped_image = img[y1:y2, x1:x2]
     return cropped_image
 
-def generate_crop(img, nose, w, h, adjust, old_crop):
-    crop_r = crop_rect(nose, w, h, adjust, old_crop)
-    return crop_image(img, crop_r), crop_r
+def generate_crop(img, nose1, nose2, w, h, adjust, old_crop, old_crop_target):
+    crop_target = calculate_crop_target(nose1, nose2, w, h, adjust, old_crop_target)
+    if (len(old_crop) < 1):
+        crop_r = crop_target
+    else:
+        crop_r = calculate_crop(old_crop, crop_target)
+    return crop_image(img, crop_r), crop_r, crop_target
 
 def main():
     with tf.Session() as sess:
@@ -82,17 +111,20 @@ def main():
         result = cv2.VideoWriter('raw3k_out.avi',
                                  cv2.VideoWriter_fourcc(*'MJPG'),
                                  30, (args.cam_width, args.cam_height))
-        v_width_h = 300
+        v_width_h = 600
         v_height_h = 400
-        v_height_adjustment = 100
+        v_height_adjustment = 50
+        v_separator_w = 10
         compose = cv2.VideoWriter('compose_out.avi',
                                   cv2.VideoWriter_fourcc(*'MJPG'),
-                                  30, (v_width_h * 4 + 4, v_height_h*2))
+                                  30, (v_width_h * 4 + v_separator_w, v_height_h*2))
 
         start = time.time()
         frame_count = 0
         crop1 = []
         crop2 = []
+        crop1_target = []
+        crop2_target = []
         while True:
             input_image, display_image, output_scale = posenet.read_cap(
                 cap, scale_factor=args.scale_factor, output_stride=output_stride)
@@ -126,24 +158,26 @@ def main():
                 min_pose_score=0.15,
                 min_part_score=0.1)
     
-            pose.sort(reverse=True, key=posenet.pose_get_nose_x)
+            pose.sort(key=posenet.pose_get_nose_x)
     
     
-            if (len(pose) == 2):
-                pose1 = pose[1]
-                c1 = pose1[1]
-                pose2 = pose[0]
-                c2 = pose2[1]
-                p1 = c1
-                p2 = c2
-
+            if (len(pose) == 4):
+                pose_a = pose[0]
+                p1 = pose_a[1]
+                pose_a = pose[1]
+                p2 = pose_a[1]
                 
-                img1, crop1 = generate_crop(display_image, p1, v_width_h, v_height_h, v_height_adjustment, crop1)
+                pose_a = pose[2]
+                p3 = pose_a[1]
+                pose_a = pose[3]
+                p4 = pose_a[1]
                 
-
-                img2, crop2 = generate_crop(display_image, p2, v_width_h, v_height_h, v_height_adjustment, crop2)
                 
-                black_separator = np.zeros((800, 4, 3), np.uint8)
+                img1, crop1, crop1_target = generate_crop(display_image, p1, p2, v_width_h, v_height_h, v_height_adjustment, crop1, crop1_target)
+                
+                img2, crop2, crop2_target = generate_crop(display_image, p3, p4, v_width_h, v_height_h, v_height_adjustment, crop2, crop2_target)
+                
+                black_separator = np.zeros((v_height_h * 2, v_separator_w, 3), np.uint8)
             
                 
                 horizontal = np.concatenate((img1, black_separator, img2), axis = 1)
