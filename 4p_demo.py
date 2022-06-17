@@ -78,7 +78,7 @@ def calculate_crop_target(nose1, nose2, w, h, adjust, old_crop_target):
         return new_crop
     over_lap = overlapping_perct(new_crop, old_crop_target)
     print('overlapping percentage :', over_lap)
-    if (over_lap < 0.8):
+    if (over_lap < 0.86):
         #print('overlapping percentage :', over_lap)
         return new_crop
     return old_crop_target
@@ -111,13 +111,16 @@ def main():
         result = cv2.VideoWriter('raw3k_out.avi',
                                  cv2.VideoWriter_fourcc(*'MJPG'),
                                  30, (args.cam_width, args.cam_height))
-        v_width_h = 600
-        v_height_h = 400
-        v_height_adjustment = 50
+        v_width = 1280
+        v_height = 720
+        factor = 1.3
+        v_width_h = round((v_width * factor) / 2)
+        v_height_h = round((v_height * factor) / 2)
+        v_height_adjustment = round(90 * factor)
         v_separator_w = 10
         compose = cv2.VideoWriter('compose_out.avi',
                                   cv2.VideoWriter_fourcc(*'MJPG'),
-                                  30, (v_width_h * 4 + v_separator_w, v_height_h*2))
+                                  30, (v_width * 2 + v_separator_w, v_height))
 
         start = time.time()
         frame_count = 0
@@ -150,7 +153,7 @@ def main():
                 display_image, pose_scores, keypoint_scores, keypoint_coords,
                 min_pose_score=0.15, min_part_score=0.1)
 
-            #cv2.imshow('posenet', overlay_image)
+            cv2.imshow('posenet', overlay_image)
 
             pose = posenet.get_pose(
                 pose_scores, keypoint_scores,
@@ -177,7 +180,10 @@ def main():
                 
                 img2, crop2, crop2_target = generate_crop(display_image, p3, p4, v_width_h, v_height_h, v_height_adjustment, crop2, crop2_target)
                 
-                black_separator = np.zeros((v_height_h * 2, v_separator_w, 3), np.uint8)
+                img1 = cv2.resize(img1, dsize=(v_width, v_height), interpolation=cv2.INTER_CUBIC)
+                img2 = cv2.resize(img2, dsize=(v_width, v_height), interpolation=cv2.INTER_CUBIC)
+                
+                black_separator = np.zeros((v_height, v_separator_w, 3), np.uint8)
             
                 
                 horizontal = np.concatenate((img1, black_separator, img2), axis = 1)
