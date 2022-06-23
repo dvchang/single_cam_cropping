@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 
 import posenet
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=int, default=101)
@@ -90,6 +91,26 @@ def generate_crop(img, nose, w, h, adjust, old_crop, old_crop_target):
     else:
         crop_r = calculate_crop(old_crop, crop_target)
     return crop_image(img, crop_r), crop_r, crop_target
+
+def linear_add(small_image, location, large_image):
+    height_s = small_image.shape[0]
+    width_s = small_image.shape[1]
+    
+    height_l = large_image.shape[0]
+    width_l = large_image.shape[1]
+    
+    factor_x = math.floor(width_l/width_s)
+    factor_y = math.floor(height_l/height_s)
+    
+    pos_y = math.floor(location -1 / factor_x)
+    pos_x = (location -1) % factor_x
+    offset_x = pos_x * width_s
+    offset_y = pos_y * height_s
+    
+    large_image[offset_y:offset_y+height_s, offset_x:offset_x+width_s] = small_image
+    
+    return large_image
+    
 
 def main():
     with tf.Session() as sess:

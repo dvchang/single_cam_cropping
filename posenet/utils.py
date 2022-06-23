@@ -124,4 +124,20 @@ def pose_get_nose_x(pose):
     nose_pose = pose[1]
     return nose_pose[0]
 
+def face_width(pose):
+    xmin = 99999
+    xmax = -9999
+    for i in range(0, 4):
+        aPose = pose[i]
+        x = aPose[0]
+        if (x > 0.001):
+            xmin = min(xmin, x)
+            xmax = max(xmax, x)
+    if (xmax > 0):
+        return xmax - xmin
+    return 0
+
+    
+    
+    
     
